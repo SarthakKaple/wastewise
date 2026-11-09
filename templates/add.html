@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Add reading - WasteWise{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Add a reading for {{ h.name }}</h2>
+  <form method="post">
+    <label for="date">Date</label>
+    <input id="date" name="date" type="date" value="{{ request.form.get('date', today) }}" required>
+
+    <label for="resource">Resource</label>
+    <select id="resource" name="resource" required>
+      {% for key, label in resources.items() %}
+      <option value="{{ key }}" {% if request.form.get('resource') == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="value">Usage for that day</label>
+    <input id="value" name="value" type="number" step="any" min="0"
+           value="{{ request.form.get('value', '') }}" required>
+
+    <button type="submit">Save reading</button>
+  </form>
+  <p><a href="{{ url_for('household', household_id=h.id) }}">Back to household</a></p>
+</div>
+{% endblock %}

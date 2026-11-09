@@ -1,0 +1,9 @@
+date,resource,value
+   2026-11-01,water,520
+   2026-11-01,electricity,8.5
+   2026-11-01,gas,0.4
+   2026-11-02,water,-50
+   2026-11-02,solar,12
+   2026-11-03,gas,0.5
+   not-a-date,water,100
+   2026-11-04,electricity,

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Register - WasteWise{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Register a household</h2>
+  <form method="post">
+    <label for="name">Household name</label>
+    <input id="name" name="name" value="{{ request.form.get('name', '') }}" required>
+
+    <label for="members">Number of members</label>
+    <input id="members" name="members" type="number" min="1" max="30"
+           value="{{ request.form.get('members', '') }}" required>
+
+    <label for="appliances">Appliances (optional, comma separated)</label>
+    <input id="appliances" name="appliances" placeholder="geyser, AC, washing machine"
+           value="{{ request.form.get('appliances', '') }}">
+
+    <button type="submit">Register</button>
+  </form>
+</div>
+{% endblock %}

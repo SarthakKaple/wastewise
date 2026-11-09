@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Night leak check - WasteWise{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Night water leak check for {{ h.name }}</h2>
+  <p class="muted">Read your water meter just before going to bed, and again first thing in the
+     morning, with no water used in between. If the meter moved, water was flowing all night,
+     which can mean a leak (a dripping tap, a running toilet or a leaking pipe).
+     Enter both readings in litres.</p>
+  <form method="post">
+    <label for="date">Date (morning of the check)</label>
+    <input id="date" name="date" type="date" value="{{ request.form.get('date', today) }}" required>
+
+    <label for="night">Meter reading before bed (litres)</label>
+    <input id="night" name="night" type="number" step="any" min="0"
+           value="{{ request.form.get('night', '') }}" required>
+
+    <label for="morning">Meter reading in the morning (litres)</label>
+    <input id="morning" name="morning" type="number" step="any" min="0"
+           value="{{ request.form.get('morning', '') }}" required>
+
+    <button type="submit">Check for a leak</button>
+  </form>
+  <p><a href="{{ url_for('household', household_id=h.id) }}">Back to household</a></p>
+</div>
+
+<div class="card">
+  <h3>Past checks</h3>
+  {% if checks %}
+  <table>
+    <tr><th>Date</th><th>Before bed</th><th>Morning</th><th>Moved</th><th>Result</th></tr>
+    {% for c in checks %}
+    <tr>
+      <td>{{ c.date }}</td><td>{{ c.night_reading }}</td><td>{{ c.morning_reading }}</td>
+      <td>{{ c.used }} L</td>
+      <td>{% if c.leak %}<b style="color:#c0392b">Possible leak</b>{% else %}OK{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No checks yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

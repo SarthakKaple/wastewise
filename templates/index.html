@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>WasteWise - Home Resource Waste Detector</h2>
+  <p class="muted">Record your water, electricity and gas usage to find where you waste resources.</p>
+  <a class="btn" href="{{ url_for('register') }}">Register a household</a>
+</div>
+<div class="card">
+  <h3>Households</h3>
+  {% if households %}
+    <table>
+      <tr><th>Name</th><th>Members</th><th></th></tr>
+      {% for h in households %}
+      <tr>
+        <td>{{ h.name }}</td>
+        <td>{{ h.members }}</td>
+        <td><a href="{{ url_for('household', household_id=h.id) }}">Open</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="muted">No households yet. Register one to get started.</p>
+  {% endif %}
+</div>
+{% endblock %}

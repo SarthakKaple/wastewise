@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Upload CSV - WasteWise{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Upload readings for {{ h.name }}</h2>
+  <p class="muted">The CSV must have three columns: <b>date</b> (YYYY-MM-DD), <b>resource</b>
+     (water, electricity or gas) and <b>value</b>. Invalid rows are skipped.</p>
+  <pre class="muted">date,resource,value
+2026-11-01,water,520
+2026-11-01,electricity,8.5
+2026-11-01,gas,0.4</pre>
+  <form method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv" required>
+    <button type="submit">Upload</button>
+  </form>
+  <p><a href="{{ url_for('household', household_id=h.id) }}">Back to household</a></p>
+</div>
+{% endblock %}

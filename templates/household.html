@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ h.name }} - WasteWise{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ h.name }}</h2>
+  <p class="muted">
+    Members: {{ h.members }}
+    {% if h.appliances %} | Appliances: {{ h.appliances }}{% endif %}
+    | Readings stored: {{ count }}
+  </p>
+  <a class="btn" href="{{ url_for('add_reading', household_id=h.id) }}">Add a reading</a>
+  <a class="btn btn-light" href="{{ url_for('upload', household_id=h.id) }}">Upload CSV</a>
+  <a class="btn btn-light" href="{{ url_for('night_check', household_id=h.id) }}">Night leak check</a>
+  <a class="btn btn-light" href="{{ url_for('settings', household_id=h.id) }}">Score weights</a>
+  {% if count > 0 %}
+  <a class="btn" href="{{ url_for('dashboard', household_id=h.id) }}">View dashboard</a>
+  {% endif %}
+  {% if count == 0 %}
+  <form method="post" action="{{ url_for('sample', household_id=h.id) }}" style="display:inline">
+    <button type="submit" class="btn-light">Load sample data</button>
+  </form>
+  {% endif %}
+</div>
+<div class="card">
+  <h3>Recent readings</h3>
+  {% if recent %}
+    <table>
+      <tr><th>Date</th><th>Resource</th><th>Value</th><th></th></tr>
+      {% for r in recent %}
+      <tr>
+        <td>{{ r.date }}</td><td>{{ resources[r.resource] }}</td><td>{{ r.value|round(2) }}</td>
+        <td>
+          <form method="post" action="{{ url_for('delete_reading', household_id=h.id, reading_id=r.id) }}"
+                onsubmit="return confirm('Delete this reading?')" style="margin:0">
+            <button type="submit" class="btn-light" style="margin:0; padding:4px 10px">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="muted">No readings yet. Add one, upload a CSV or load sample data.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ h.name }}{% endblock %}
+{% block content %}
+<style>
+  .score-big { font-size: 56px; font-weight: bold; margin: 4px 0; }
+  .band { display: inline-block; padding: 3px 12px; border-radius: 12px; color: white; font-size: 14px; }
+  .band.good { background: #2e9e5b; }
+  .band.moderate { background: #d9a400; }
+  .band.high { background: #e67e22; }
+  .band.severe { background: #c0392b; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .mini { background: #f4f7f5; border-radius: 8px; padding: 14px; }
+  .mini .num { font-size: 30px; font-weight: bold; }
+  ul.clean { padding-left: 20px; margin: 8px 0 0 0; }
+  ul.clean li { margin-bottom: 8px; }
+  .leak-banner { background: #fbdada; color: #8a1f1f; border-left: 6px solid #c0392b; }
+</style>
+
+<div class="card">
+  <h2>{{ h.name }} - Dashboard</h2>
+  <p class="muted">Members: {{ h.members }} | Score: 0 = no waste, 100 = severe waste (last 7 days vs your normal level)</p>
+  <div class="score-big">{{ result.overall_score }}</div>
+  <span class="band {{ result.overall_band|lower }}">{{ result.overall_band }}</span>
+  <p class="muted">Weights: water {{ weights_pct.water }}%, electricity {{ weights_pct.electricity }}%,
+     gas {{ weights_pct.gas }}% - <a href="{{ url_for('settings', household_id=h.id) }}">change</a></p>
+  <p><a href="{{ url_for('household', household_id=h.id) }}">Back to household</a></p>
+</div>
+
+{% if leak %}
+<div class="card leak-banner">
+  <b>Possible water leak.</b> Your recent night checks show the water meter moving while no
+  water was in use. Check taps, toilet tanks and pipes.
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Score by resource</h3>
+  <div class="grid">
+    {% for key, info in result.resources.items() %}
+    <div class="mini">
+      <div class="muted">{{ resources[key] }}</div>
+      <div class="num">{{ info.score }}</div>
+      <span class="band {{ info.band|lower }}">{{ info.band }}</span>
+      <p class="muted">Last 7 days avg: {{ info.usage }}<br>Normal level: {{ info.baseline }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h3>Saving tips</h3>
+  <ul class="clean">
+    {% for t in tips %}<li>{{ t }}</li>{% endfor %}
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Alerts: unusually high days</h3>
+  {% if alerts %}
+  <table>
+    <tr><th>Date</th><th>Resource</th><th>Usage</th><th>Above normal</th></tr>
+    {% for a in alerts %}
+    <tr>
+      <td>{{ a.date }}</td><td>{{ resources[a.resource] }}</td>
+      <td>{{ a.value }}</td><td>{{ a.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No unusual days detected.</p>
+  {% endif %}
+</div>
+
+{% if checks %}
+<div class="card">
+  <h3>Recent night leak checks</h3>
+  <table>
+    <tr><th>Date</th><th>Meter moved overnight</th><th>Result</th></tr>
+    {% for c in checks %}
+    <tr>
+      <td>{{ c.date }}</td><td>{{ c.used }} L</td>
+      <td>{% if c.leak %}<b style="color:#c0392b">Possible leak</b>{% else %}OK{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p><a href="{{ url_for('night_check', household_id=h.id) }}">Add a night check</a></p>
+</div>
+{% endif %}
+
+{% if history %}
+<div class="card"><canvas id="chart-history" height="110"></canvas></div>
+{% endif %}
+
+{% for key in charts %}
+<div class="card"><canvas id="chart-{{ key }}" height="110"></canvas></div>
+{% endfor %}
+
+<script type="application/json" id="chart-data">{{ charts|tojson }}</script>
+<script type="application/json" id="history-data">{{ history|tojson }}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const chartData = JSON.parse(document.getElementById("chart-data").textContent);
+  const history = JSON.parse(document.getElementById("history-data").textContent);
+
+  Object.entries(chartData).forEach(([key, c]) => {
+    new Chart(document.getElementById("chart-" + key), {
+      type: "line",
+      data: {
+        labels: c.dates,
+        datasets: [
+          { label: "Usage", data: c.values, borderColor: "#1f6f4a", tension: 0.2,
+            pointRadius: c.values.length < 15 ? 4 : 0 },
+          { label: "Normal level", data: c.baseline, borderColor: "#999999", borderDash: [6, 4], pointRadius: 0 },
+          { label: "Unusually high", data: c.anomalies, borderColor: "#c0392b",
+            backgroundColor: "#c0392b", showLine: false, pointRadius: 5 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { title: { display: true, text: c.label + " - daily usage" } },
+        scales: { x: { ticks: { maxTicksLimit: 8 } } }
+      }
+    });
+  });
+
+  if (history.length > 0) {
+    const colors = { water: "#2980b9", electricity: "#e67e22", gas: "#8e44ad" };
+    const datasets = [
+      { label: "Overall", data: history.map(w => w.overall), borderColor: "#222222",
+        borderWidth: 3, tension: 0.2, pointRadius: 4 }
+    ];
+    ["water", "electricity", "gas"].forEach(r => {
+      datasets.push({ label: r, data: history.map(w => (r in w.scores ? w.scores[r] : null)),
+        borderColor: colors[r], borderWidth: 1.5, tension: 0.2, pointRadius: 2 });
+    });
+    new Chart(document.getElementById("chart-history"), {
+      type: "line",
+      data: { labels: history.map(w => w.week_end), datasets: datasets },
+      options: {
+        responsive: true,
+        plugins: { title: { display: true, text: "Weekly Waste Score (lower is better)" } },
+        scales: { y: { min: 0, max: 100 } }
+      }
+    });
+  }
+</script>
+{% endblock %}
