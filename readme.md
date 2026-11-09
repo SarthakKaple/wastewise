@@ -14,6 +14,7 @@ Python, Flask, SQLite, pandas, NumPy, Chart.js, pytest
     pip install -r requirements.txt
     python app.py
 Then open http://127.0.0.1:5000
+There is also a demo csv file given, you can upload it on the wastwise and the click on view dashboard so, you can see example results.
 
 ## Test it
     pytest -v
